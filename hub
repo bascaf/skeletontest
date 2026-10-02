@@ -373,16 +373,24 @@ function Library:CreateWindow(titleText)
         ResizeGrip.TextColor3 = secText
 
         for _, item in ipairs(registeredThemeElements.Cards) do
-            item.BackgroundColor3 = cardBg
+            if item and item.Parent then
+                item.BackgroundColor3 = cardBg
+            end
         end
         for _, item in ipairs(registeredThemeElements.Strokes) do
-            item.Color = borderCol
+            if item and item.Parent then
+                item.Color = borderCol
+            end
         end
         for _, item in ipairs(registeredThemeElements.Texts) do
-            item.TextColor3 = textCol
+            if item and item.Parent then
+                item.TextColor3 = textCol
+            end
         end
         for _, item in ipairs(registeredThemeElements.SecondaryTexts) do
-            item.TextColor3 = secText
+            if item and item.Parent then
+                item.TextColor3 = secText
+            end
         end
     end
 
@@ -608,75 +616,493 @@ function Library:CreateWindow(titleText)
         end)
     end
 
-    function Window:CreateTab(name)
-        local TabBtn = Instance.new("TextButton")
-        TabBtn.Name = name .. "Tab"
-        TabBtn.Size = UDim2.new(1, 0, 0, 32)
-        TabBtn.BackgroundColor3 = Color3.fromRGB(36, 38, 44)
-        TabBtn.Text = name
-        TabBtn.Font = Enum.Font.FredokaOne
-        TabBtn.TextSize = 13
-        TabBtn.TextColor3 = Color3.fromRGB(200, 200, 205)
-        TabBtn.AutoButtonColor = false
-        TabBtn.ZIndex = 4
-        TabBtn.Parent = TabContainer
+    local function attachComponentMethods(parentObj, containerScroll)
+        function parentObj:CreateSection(secText)
+            local SectionFrame = Instance.new("Frame")
+            SectionFrame.Size = UDim2.new(1, 0, 0, 24)
+            SectionFrame.BackgroundTransparency = 1
+            SectionFrame.ZIndex = 4
+            SectionFrame.Parent = containerScroll
 
-        local TabBtnCorner = Instance.new("UICorner")
-        TabBtnCorner.CornerRadius = UDim.new(0, 6)
-        TabBtnCorner.Parent = TabBtn
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(1, -10, 1, 0)
+            Label.Position = UDim2.new(0, 5, 0, 0)
+            Label.Text = string.upper(secText)
+            Label.Font = Enum.Font.FredokaOne
+            Label.TextSize = 11
+            Label.TextColor3 = isDarkTheme and Color3.fromRGB(130, 133, 145) or Color3.fromRGB(115, 118, 125)
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.BackgroundTransparency = 1
+            Label.ZIndex = 4
+            Label.Parent = SectionFrame
 
-        local TabBtnStroke = Instance.new("UIStroke")
-        TabBtnStroke.Color = Color3.fromRGB(48, 50, 58)
-        TabBtnStroke.Thickness = 1
-        TabBtnStroke.Parent = TabBtn
+            table.insert(registeredThemeElements.SecondaryTexts, Label)
 
-        table.insert(registeredThemeElements.Cards, TabBtn)
-        table.insert(registeredThemeElements.Strokes, TabBtnStroke)
-        table.insert(registeredThemeElements.Texts, TabBtn)
-
-        local PageScroll = Instance.new("ScrollingFrame")
-        PageScroll.Name = name .. "Page"
-        PageScroll.Size = UDim2.new(1, 0, 1, 0)
-        PageScroll.BackgroundTransparency = 1
-        PageScroll.ScrollBarThickness = 3
-        PageScroll.Visible = false
-        PageScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-        PageScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        PageScroll.ZIndex = 4
-        PageScroll.Parent = Pages
-
-        local PageLayout = Instance.new("UIListLayout")
-        PageLayout.Padding = UDim.new(0, 8)
-        PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        PageLayout.Parent = PageScroll
-
-        local PagePadding = Instance.new("UIPadding")
-        PagePadding.PaddingRight = UDim.new(0, 8)
-        PagePadding.PaddingTop = UDim.new(0, 2)
-        PagePadding.Parent = PageScroll
-
-        local function activateTab()
-            for _, tab in pairs(Window.Tabs) do
-                tab.Page.Visible = false
-                tab.Button.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
-                tab.Button.TextColor3 = isDarkTheme and Color3.fromRGB(200, 200, 205) or Color3.fromRGB(60, 60, 65)
+            local Section = {}
+            function Section:Remove()
+                SectionFrame:Destroy()
             end
-            PageScroll.Visible = true
-            TabBtn.BackgroundColor3 = isDarkTheme and Color3.fromRGB(52, 54, 62) or Color3.fromRGB(230, 233, 238)
-            TabBtn.TextColor3 = isDarkTheme and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(20, 20, 20)
-            Window.CurrentTab = name
+            return Section
         end
 
-        TabBtn.MouseButton1Click:Connect(activateTab)
+        function parentObj:CreateButton(btnText, colorOrCb, callback)
+            local customColor = (typeof(colorOrCb) == "Color3") and colorOrCb or nil
+            local cb = (typeof(colorOrCb) == "function") and colorOrCb or callback or function() end
 
-        table.insert(Window.Tabs, {Button = TabBtn, Page = PageScroll})
-        if #Window.Tabs == 1 then
-            activateTab()
+            local Btn = Instance.new("TextButton")
+            Btn.Size = UDim2.new(1, 0, 0, 34)
+            Btn.BackgroundColor3 = customColor or (isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255))
+            Btn.Text = btnText
+            Btn.Font = Enum.Font.FredokaOne
+            Btn.TextSize = 13
+            Btn.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+            Btn.ZIndex = 4
+            Btn.Parent = containerScroll
+
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 6)
+            Corner.Parent = Btn
+
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
+            Stroke.Thickness = 1
+            Stroke.Parent = Btn
+
+            if not customColor then
+                table.insert(registeredThemeElements.Cards, Btn)
+            end
+            table.insert(registeredThemeElements.Strokes, Stroke)
+            table.insert(registeredThemeElements.Texts, Btn)
+
+            Btn.MouseButton1Click:Connect(function()
+                pcall(cb)
+            end)
+
+            local Element = {}
+            function Element:Remove()
+                Btn:Destroy()
+            end
+            function Element:SetText(t)
+                Btn.Text = t
+            end
+            return Element
         end
 
-        local Tab = {}
+        function parentObj:CreateButtonGroup(buttonsData)
+            buttonsData = buttonsData or {}
+            local Frame = Instance.new("Frame")
+            Frame.Size = UDim2.new(1, 0, 0, 34)
+            Frame.BackgroundTransparency = 1
+            Frame.ZIndex = 4
+            Frame.Parent = containerScroll
 
-        function Tab:CreateDropdown(dropText, options, default, callback)
+            local Layout = Instance.new("UIListLayout")
+            Layout.FillDirection = Enum.FillDirection.Horizontal
+            Layout.Padding = UDim.new(0, 6)
+            Layout.SortOrder = Enum.SortOrder.LayoutOrder
+            Layout.Parent = Frame
+
+            local btnCount = #buttonsData
+            for _, bData in ipairs(buttonsData) do
+                local bName = bData.Name or bData[1] or "Button"
+                local bColor = bData.Color or bData[2]
+                local bCb = bData.Callback or bData[3] or function() end
+
+                if typeof(bColor) == "function" then
+                    bCb = bColor
+                    bColor = nil
+                end
+
+                local Btn = Instance.new("TextButton")
+                Btn.Size = UDim2.new(1 / btnCount, -((btnCount - 1) * 6) / btnCount, 1, 0)
+                Btn.BackgroundColor3 = bColor or (isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255))
+                Btn.Text = bName
+                Btn.Font = Enum.Font.FredokaOne
+                Btn.TextSize = 13
+                Btn.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+                Btn.ZIndex = 4
+                Btn.Parent = Frame
+
+                local Corner = Instance.new("UICorner")
+                Corner.CornerRadius = UDim.new(0, 6)
+                Corner.Parent = Btn
+
+                local Stroke = Instance.new("UIStroke")
+                Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
+                Stroke.Thickness = 1
+                Stroke.Parent = Btn
+
+                if not bColor then
+                    table.insert(registeredThemeElements.Cards, Btn)
+                end
+                table.insert(registeredThemeElements.Strokes, Stroke)
+                table.insert(registeredThemeElements.Texts, Btn)
+
+                Btn.MouseButton1Click:Connect(function()
+                    pcall(bCb)
+                end)
+            end
+
+            local Group = {}
+            function Group:Remove()
+                Frame:Destroy()
+            end
+            return Group
+        end
+
+        function parentObj:CreateSubMenu(menuTitle)
+            local isOpen = false
+            local MenuHolder = Instance.new("Frame")
+            MenuHolder.Size = UDim2.new(1, 0, 0, 36)
+            MenuHolder.BackgroundColor3 = isDarkTheme and Color3.fromRGB(30, 32, 37) or Color3.fromRGB(250, 251, 253)
+            MenuHolder.ClipsDescendants = true
+            MenuHolder.ZIndex = 4
+            MenuHolder.Parent = containerScroll
+
+            local MenuCorner = Instance.new("UICorner")
+            MenuCorner.CornerRadius = UDim.new(0, 6)
+            MenuCorner.Parent = MenuHolder
+
+            local MenuStroke = Instance.new("UIStroke")
+            MenuStroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
+            MenuStroke.Thickness = 1
+            MenuStroke.Parent = MenuHolder
+
+            local HeaderBtn = Instance.new("TextButton")
+            HeaderBtn.Size = UDim2.new(1, 0, 0, 36)
+            HeaderBtn.BackgroundTransparency = 1
+            HeaderBtn.Text = ""
+            HeaderBtn.ZIndex = 5
+            HeaderBtn.Parent = MenuHolder
+
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(1, -40, 1, 0)
+            Label.Position = UDim2.new(0, 10, 0, 0)
+            Label.Text = menuTitle
+            Label.Font = Enum.Font.FredokaOne
+            Label.TextSize = 13
+            Label.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(30, 30, 35)
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.BackgroundTransparency = 1
+            Label.ZIndex = 5
+            Label.Parent = HeaderBtn
+
+            local Arrow = Instance.new("TextLabel")
+            Arrow.Size = UDim2.new(0, 20, 1, 0)
+            Arrow.Position = UDim2.new(1, -26, 0, 0)
+            Arrow.Text = "▼"
+            Arrow.Font = Enum.Font.FredokaOne
+            Arrow.TextSize = 10
+            Arrow.TextColor3 = isDarkTheme and Color3.fromRGB(180, 182, 190) or Color3.fromRGB(90, 90, 95)
+            Arrow.BackgroundTransparency = 1
+            Arrow.ZIndex = 5
+            Arrow.Parent = HeaderBtn
+
+            local SubContent = Instance.new("Frame")
+            SubContent.Size = UDim2.new(1, -12, 0, 0)
+            SubContent.Position = UDim2.new(0, 6, 0, 38)
+            SubContent.BackgroundTransparency = 1
+            SubContent.AutomaticSize = Enum.AutomaticSize.Y
+            SubContent.ZIndex = 5
+            SubContent.Parent = MenuHolder
+
+            local SubLayout = Instance.new("UIListLayout")
+            SubLayout.Padding = UDim.new(0, 6)
+            SubLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            SubLayout.Parent = SubContent
+
+            local SubPadding = Instance.new("UIPadding")
+            SubPadding.PaddingBottom = UDim.new(0, 8)
+            SubPadding.Parent = SubContent
+
+            table.insert(registeredThemeElements.Cards, MenuHolder)
+            table.insert(registeredThemeElements.Strokes, MenuStroke)
+            table.insert(registeredThemeElements.Texts, Label)
+            table.insert(registeredThemeElements.SecondaryTexts, Arrow)
+
+            local function updateMenuHeight()
+                if isOpen then
+                    local h = 38 + SubLayout.AbsoluteContentSize.Y + 8
+                    TweenService:Create(MenuHolder, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Size = UDim2.new(1, 0, 0, h)
+                    }):Play()
+                end
+            end
+
+            SubLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateMenuHeight)
+
+            HeaderBtn.MouseButton1Click:Connect(function()
+                isOpen = not isOpen
+                local targetH = isOpen and (38 + SubLayout.AbsoluteContentSize.Y + 8) or 36
+                TweenService:Create(MenuHolder, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Size = UDim2.new(1, 0, 0, targetH)
+                }):Play()
+                TweenService:Create(Arrow, TweenInfo.new(0.2), {
+                    Rotation = isOpen and 180 or 0
+                }):Play()
+            end)
+
+            local SubMenu = {}
+            attachComponentMethods(SubMenu, SubContent)
+            function SubMenu:Remove()
+                MenuHolder:Destroy()
+            end
+            return SubMenu
+        end
+
+        function parentObj:CreateToggle(toggleText, default, callback)
+            local state = default or false
+            callback = callback or function() end
+
+            local Frame = Instance.new("Frame")
+            Frame.Size = UDim2.new(1, 0, 0, 34)
+            Frame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
+            Frame.ZIndex = 4
+            Frame.Parent = containerScroll
+
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 6)
+            Corner.Parent = Frame
+
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
+            Stroke.Thickness = 1
+            Stroke.Parent = Frame
+
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(1, -60, 1, 0)
+            Label.Position = UDim2.new(0, 10, 0, 0)
+            Label.Text = toggleText
+            Label.Font = Enum.Font.FredokaOne
+            Label.TextSize = 13
+            Label.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.BackgroundTransparency = 1
+            Label.ZIndex = 4
+            Label.Parent = Frame
+
+            local Switch = Instance.new("TextButton")
+            Switch.Size = UDim2.new(0, 42, 0, 20)
+            Switch.Position = UDim2.new(1, -50, 0.5, -10)
+            Switch.BackgroundColor3 = state and Color3.fromRGB(75, 125, 240) or Color3.fromRGB(50, 52, 60)
+            Switch.Text = ""
+            Switch.AutoButtonColor = false
+            Switch.ZIndex = 4
+            Switch.Parent = Frame
+
+            local SwitchCorner = Instance.new("UICorner")
+            SwitchCorner.CornerRadius = UDim.new(1, 0)
+            SwitchCorner.Parent = Switch
+
+            local Circle = Instance.new("Frame")
+            Circle.Size = UDim2.new(0, 16, 0, 16)
+            Circle.Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+            Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Circle.ZIndex = 4
+            Circle.Parent = Switch
+
+            local CircleCorner = Instance.new("UICorner")
+            CircleCorner.CornerRadius = UDim.new(1, 0)
+            CircleCorner.Parent = Circle
+
+            table.insert(registeredThemeElements.Cards, Frame)
+            table.insert(registeredThemeElements.Strokes, Stroke)
+            table.insert(registeredThemeElements.Texts, Label)
+
+            local function updateToggle()
+                state = not state
+                TweenService:Create(Switch, TweenInfo.new(0.2), {
+                    BackgroundColor3 = state and Color3.fromRGB(75, 125, 240) or (isDarkTheme and Color3.fromRGB(50, 52, 60) or Color3.fromRGB(200, 200, 205))
+                }):Play()
+                TweenService:Create(Circle, TweenInfo.new(0.2), {
+                    Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+                }):Play()
+                pcall(callback, state)
+            end
+
+            Switch.MouseButton1Click:Connect(updateToggle)
+
+            local Element = {}
+            function Element:Remove()
+                Frame:Destroy()
+            end
+            function Element:SetState(s)
+                if state ~= s then
+                    updateToggle()
+                end
+            end
+            return Element
+        end
+
+        function parentObj:CreateInput(inputText, placeholder, callback)
+            callback = callback or function() end
+
+            local Frame = Instance.new("Frame")
+            Frame.Size = UDim2.new(1, 0, 0, 34)
+            Frame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
+            Frame.ZIndex = 4
+            Frame.Parent = containerScroll
+
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 6)
+            Corner.Parent = Frame
+
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
+            Stroke.Thickness = 1
+            Stroke.Parent = Frame
+
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(0.5, 0, 1, 0)
+            Label.Position = UDim2.new(0, 10, 0, 0)
+            Label.Text = inputText
+            Label.Font = Enum.Font.FredokaOne
+            Label.TextSize = 13
+            Label.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.BackgroundTransparency = 1
+            Label.ZIndex = 4
+            Label.Parent = Frame
+
+            local Box = Instance.new("TextBox")
+            Box.Size = UDim2.new(0.45, -10, 0, 24)
+            Box.Position = UDim2.new(0.55, 0, 0.5, -12)
+            Box.BackgroundColor3 = isDarkTheme and Color3.fromRGB(28, 29, 34) or Color3.fromRGB(240, 240, 245)
+            Box.Text = ""
+            Box.PlaceholderText = placeholder or "..."
+            Box.Font = Enum.Font.FredokaOne
+            Box.TextSize = 12
+            Box.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+            Box.PlaceholderColor3 = Color3.fromRGB(130, 130, 135)
+            Box.ZIndex = 4
+            Box.Parent = Frame
+
+            local BoxCorner = Instance.new("UICorner")
+            BoxCorner.CornerRadius = UDim.new(0, 4)
+            BoxCorner.Parent = Box
+
+            table.insert(registeredThemeElements.Cards, Frame)
+            table.insert(registeredThemeElements.Strokes, Stroke)
+            table.insert(registeredThemeElements.Texts, Label)
+
+            Box.FocusLost:Connect(function(enterPressed)
+                pcall(callback, Box.Text, enterPressed)
+            end)
+
+            local Element = {}
+            function Element:Remove()
+                Frame:Destroy()
+            end
+            return Element
+        end
+
+        function parentObj:CreateSlider(sliderText, min, max, default, callback)
+            callback = callback or function() end
+            local value = default or min
+
+            local Frame = Instance.new("Frame")
+            Frame.Size = UDim2.new(1, 0, 0, 46)
+            Frame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
+            Frame.ZIndex = 4
+            Frame.Parent = containerScroll
+
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 6)
+            Corner.Parent = Frame
+
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
+            Stroke.Thickness = 1
+            Stroke.Parent = Frame
+
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(0.7, 0, 0, 20)
+            Label.Position = UDim2.new(0, 10, 0, 2)
+            Label.Text = sliderText
+            Label.Font = Enum.Font.FredokaOne
+            Label.TextSize = 13
+            Label.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.BackgroundTransparency = 1
+            Label.ZIndex = 4
+            Label.Parent = Frame
+
+            local ValLabel = Instance.new("TextLabel")
+            ValLabel.Size = UDim2.new(0.3, -10, 0, 20)
+            ValLabel.Position = UDim2.new(0.7, 0, 0, 2)
+            ValLabel.Text = tostring(value)
+            ValLabel.Font = Enum.Font.FredokaOne
+            ValLabel.TextSize = 12
+            ValLabel.TextColor3 = isDarkTheme and Color3.fromRGB(180, 182, 190) or Color3.fromRGB(70, 70, 75)
+            ValLabel.TextXAlignment = Enum.TextXAlignment.Right
+            ValLabel.BackgroundTransparency = 1
+            ValLabel.ZIndex = 4
+            ValLabel.Parent = Frame
+
+            local Bar = Instance.new("Frame")
+            Bar.Size = UDim2.new(1, -20, 0, 8)
+            Bar.Position = UDim2.new(0, 10, 0, 28)
+            Bar.BackgroundColor3 = isDarkTheme and Color3.fromRGB(50, 52, 60) or Color3.fromRGB(225, 225, 230)
+            Bar.ZIndex = 4
+            Bar.Parent = Frame
+
+            local BarCorner = Instance.new("UICorner")
+            BarCorner.CornerRadius = UDim.new(1, 0)
+            BarCorner.Parent = Bar
+
+            local Fill = Instance.new("Frame")
+            local initPercent = math.clamp((value - min) / (max - min), 0, 1)
+            Fill.Size = UDim2.new(initPercent, 0, 1, 0)
+            Fill.BackgroundColor3 = isDarkTheme and Color3.fromRGB(100, 140, 255) or Color3.fromRGB(80, 80, 85)
+            Fill.BorderSizePixel = 0
+            Fill.ZIndex = 4
+            Fill.Parent = Bar
+
+            local FillCorner = Instance.new("UICorner")
+            FillCorner.CornerRadius = UDim.new(1, 0)
+            FillCorner.Parent = Fill
+
+            table.insert(registeredThemeElements.Cards, Frame)
+            table.insert(registeredThemeElements.Strokes, Stroke)
+            table.insert(registeredThemeElements.Texts, Label)
+            table.insert(registeredThemeElements.SecondaryTexts, ValLabel)
+
+            local sliding = false
+            local function update(input)
+                local percent = math.clamp((input.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
+                Fill.Size = UDim2.new(percent, 0, 1, 0)
+                local currentVal = math.floor(min + (max - min) * percent)
+                ValLabel.Text = tostring(currentVal)
+                pcall(callback, currentVal)
+            end
+
+            Bar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    sliding = true
+                    update(input)
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    sliding = false
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    update(input)
+                end
+            end)
+
+            local Element = {}
+            function Element:Remove()
+                Frame:Destroy()
+            end
+            return Element
+        end
+
+        function parentObj:CreateDropdown(dropText, options, default, callback)
             options = options or {}
             callback = callback or function() end
             local selected = default or (options[1] or "Select...")
@@ -687,7 +1113,7 @@ function Library:CreateWindow(titleText)
             DropFrame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
             DropFrame.ClipsDescendants = true
             DropFrame.ZIndex = 5
-            DropFrame.Parent = PageScroll
+            DropFrame.Parent = containerScroll
 
             local DropCorner = Instance.new("UICorner")
             DropCorner.CornerRadius = UDim.new(0, 6)
@@ -802,268 +1228,83 @@ function Library:CreateWindow(titleText)
                     pcall(callback, opt)
                 end)
             end
-        end
 
-        function Tab:CreateButton(btnText, callback)
-            callback = callback or function() end
-
-            local Btn = Instance.new("TextButton")
-            Btn.Size = UDim2.new(1, 0, 0, 34)
-            Btn.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
-            Btn.Text = btnText
-            Btn.Font = Enum.Font.FredokaOne
-            Btn.TextSize = 13
-            Btn.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
-            Btn.ZIndex = 4
-            Btn.Parent = PageScroll
-
-            local Corner = Instance.new("UICorner")
-            Corner.CornerRadius = UDim.new(0, 6)
-            Corner.Parent = Btn
-
-            local Stroke = Instance.new("UIStroke")
-            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
-            Stroke.Thickness = 1
-            Stroke.Parent = Btn
-
-            table.insert(registeredThemeElements.Cards, Btn)
-            table.insert(registeredThemeElements.Strokes, Stroke)
-            table.insert(registeredThemeElements.Texts, Btn)
-
-            Btn.MouseButton1Click:Connect(function()
-                pcall(callback)
-            end)
-        end
-
-        function Tab:CreateToggle(toggleText, default, callback)
-            local state = default or false
-            callback = callback or function() end
-
-            local Frame = Instance.new("Frame")
-            Frame.Size = UDim2.new(1, 0, 0, 34)
-            Frame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
-            Frame.ZIndex = 4
-            Frame.Parent = PageScroll
-
-            local Corner = Instance.new("UICorner")
-            Corner.CornerRadius = UDim.new(0, 6)
-            Corner.Parent = Frame
-
-            local Stroke = Instance.new("UIStroke")
-            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
-            Stroke.Thickness = 1
-            Stroke.Parent = Frame
-
-            local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(1, -60, 1, 0)
-            Label.Position = UDim2.new(0, 10, 0, 0)
-            Label.Text = toggleText
-            Label.Font = Enum.Font.FredokaOne
-            Label.TextSize = 13
-            Label.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
-            Label.TextXAlignment = Enum.TextXAlignment.Left
-            Label.BackgroundTransparency = 1
-            Label.ZIndex = 4
-            Label.Parent = Frame
-
-            local Switch = Instance.new("TextButton")
-            Switch.Size = UDim2.new(0, 42, 0, 20)
-            Switch.Position = UDim2.new(1, -50, 0.5, -10)
-            Switch.BackgroundColor3 = state and Color3.fromRGB(75, 125, 240) or Color3.fromRGB(50, 52, 60)
-            Switch.Text = ""
-            Switch.AutoButtonColor = false
-            Switch.ZIndex = 4
-            Switch.Parent = Frame
-
-            local SwitchCorner = Instance.new("UICorner")
-            SwitchCorner.CornerRadius = UDim.new(1, 0)
-            SwitchCorner.Parent = Switch
-
-            local Circle = Instance.new("Frame")
-            Circle.Size = UDim2.new(0, 16, 0, 16)
-            Circle.Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-            Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            Circle.ZIndex = 4
-            Circle.Parent = Switch
-
-            local CircleCorner = Instance.new("UICorner")
-            CircleCorner.CornerRadius = UDim.new(1, 0)
-            CircleCorner.Parent = Circle
-
-            table.insert(registeredThemeElements.Cards, Frame)
-            table.insert(registeredThemeElements.Strokes, Stroke)
-            table.insert(registeredThemeElements.Texts, Label)
-
-            local function updateToggle()
-                state = not state
-                TweenService:Create(Switch, TweenInfo.new(0.2), {
-                    BackgroundColor3 = state and Color3.fromRGB(75, 125, 240) or (isDarkTheme and Color3.fromRGB(50, 52, 60) or Color3.fromRGB(200, 200, 205))
-                }):Play()
-                TweenService:Create(Circle, TweenInfo.new(0.2), {
-                    Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-                }):Play()
-                pcall(callback, state)
+            local Element = {}
+            function Element:Remove()
+                DropFrame:Destroy()
             end
-
-            Switch.MouseButton1Click:Connect(updateToggle)
+            return Element
         end
+    end
 
-        function Tab:CreateInput(inputText, placeholder, callback)
-            callback = callback or function() end
+    function Window:CreateTab(name)
+        local TabBtn = Instance.new("TextButton")
+        TabBtn.Name = name .. "Tab"
+        TabBtn.Size = UDim2.new(1, 0, 0, 32)
+        TabBtn.BackgroundColor3 = Color3.fromRGB(36, 38, 44)
+        TabBtn.Text = name
+        TabBtn.Font = Enum.Font.FredokaOne
+        TabBtn.TextSize = 13
+        TabBtn.TextColor3 = Color3.fromRGB(200, 200, 205)
+        TabBtn.AutoButtonColor = false
+        TabBtn.ZIndex = 4
+        TabBtn.Parent = TabContainer
 
-            local Frame = Instance.new("Frame")
-            Frame.Size = UDim2.new(1, 0, 0, 34)
-            Frame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
-            Frame.ZIndex = 4
-            Frame.Parent = PageScroll
+        local TabBtnCorner = Instance.new("UICorner")
+        TabBtnCorner.CornerRadius = UDim.new(0, 6)
+        TabBtnCorner.Parent = TabBtn
 
-            local Corner = Instance.new("UICorner")
-            Corner.CornerRadius = UDim.new(0, 6)
-            Corner.Parent = Frame
+        local TabBtnStroke = Instance.new("UIStroke")
+        TabBtnStroke.Color = Color3.fromRGB(48, 50, 58)
+        TabBtnStroke.Thickness = 1
+        TabBtnStroke.Parent = TabBtn
 
-            local Stroke = Instance.new("UIStroke")
-            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
-            Stroke.Thickness = 1
-            Stroke.Parent = Frame
+        table.insert(registeredThemeElements.Cards, TabBtn)
+        table.insert(registeredThemeElements.Strokes, TabBtnStroke)
+        table.insert(registeredThemeElements.Texts, TabBtn)
 
-            local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(0.5, 0, 1, 0)
-            Label.Position = UDim2.new(0, 10, 0, 0)
-            Label.Text = inputText
-            Label.Font = Enum.Font.FredokaOne
-            Label.TextSize = 13
-            Label.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
-            Label.TextXAlignment = Enum.TextXAlignment.Left
-            Label.BackgroundTransparency = 1
-            Label.ZIndex = 4
-            Label.Parent = Frame
+        local PageScroll = Instance.new("ScrollingFrame")
+        PageScroll.Name = name .. "Page"
+        PageScroll.Size = UDim2.new(1, 0, 1, 0)
+        PageScroll.BackgroundTransparency = 1
+        PageScroll.ScrollBarThickness = 3
+        PageScroll.Visible = false
+        PageScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        PageScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+        PageScroll.ZIndex = 4
+        PageScroll.Parent = Pages
 
-            local Box = Instance.new("TextBox")
-            Box.Size = UDim2.new(0.45, -10, 0, 24)
-            Box.Position = UDim2.new(0.55, 0, 0.5, -12)
-            Box.BackgroundColor3 = isDarkTheme and Color3.fromRGB(28, 29, 34) or Color3.fromRGB(240, 240, 245)
-            Box.Text = ""
-            Box.PlaceholderText = placeholder or "..."
-            Box.Font = Enum.Font.FredokaOne
-            Box.TextSize = 12
-            Box.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
-            Box.PlaceholderColor3 = Color3.fromRGB(130, 130, 135)
-            Box.ZIndex = 4
-            Box.Parent = Frame
+        local PageLayout = Instance.new("UIListLayout")
+        PageLayout.Padding = UDim.new(0, 8)
+        PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        PageLayout.Parent = PageScroll
 
-            local BoxCorner = Instance.new("UICorner")
-            BoxCorner.CornerRadius = UDim.new(0, 4)
-            BoxCorner.Parent = Box
+        local PagePadding = Instance.new("UIPadding")
+        PagePadding.PaddingRight = UDim.new(0, 8)
+        PagePadding.PaddingTop = UDim.new(0, 2)
+        PagePadding.Parent = PageScroll
 
-            table.insert(registeredThemeElements.Cards, Frame)
-            table.insert(registeredThemeElements.Strokes, Stroke)
-            table.insert(registeredThemeElements.Texts, Label)
-
-            Box.FocusLost:Connect(function(enterPressed)
-                pcall(callback, Box.Text, enterPressed)
-            end)
-        end
-
-        function Tab:CreateSlider(sliderText, min, max, default, callback)
-            callback = callback or function() end
-            local value = default or min
-
-            local Frame = Instance.new("Frame")
-            Frame.Size = UDim2.new(1, 0, 0, 46)
-            Frame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
-            Frame.ZIndex = 4
-            Frame.Parent = PageScroll
-
-            local Corner = Instance.new("UICorner")
-            Corner.CornerRadius = UDim.new(0, 6)
-            Corner.Parent = Frame
-
-            local Stroke = Instance.new("UIStroke")
-            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
-            Stroke.Thickness = 1
-            Stroke.Parent = Frame
-
-            local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(0.7, 0, 0, 20)
-            Label.Position = UDim2.new(0, 10, 0, 2)
-            Label.Text = sliderText
-            Label.Font = Enum.Font.FredokaOne
-            Label.TextSize = 13
-            Label.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
-            Label.TextXAlignment = Enum.TextXAlignment.Left
-            Label.BackgroundTransparency = 1
-            Label.ZIndex = 4
-            Label.Parent = Frame
-
-            local ValLabel = Instance.new("TextLabel")
-            ValLabel.Size = UDim2.new(0.3, -10, 0, 20)
-            ValLabel.Position = UDim2.new(0.7, 0, 0, 2)
-            ValLabel.Text = tostring(value)
-            ValLabel.Font = Enum.Font.FredokaOne
-            ValLabel.TextSize = 12
-            ValLabel.TextColor3 = isDarkTheme and Color3.fromRGB(180, 182, 190) or Color3.fromRGB(70, 70, 75)
-            ValLabel.TextXAlignment = Enum.TextXAlignment.Right
-            ValLabel.BackgroundTransparency = 1
-            ValLabel.ZIndex = 4
-            ValLabel.Parent = Frame
-
-            local Bar = Instance.new("Frame")
-            Bar.Size = UDim2.new(1, -20, 0, 8)
-            Bar.Position = UDim2.new(0, 10, 0, 28)
-            Bar.BackgroundColor3 = isDarkTheme and Color3.fromRGB(50, 52, 60) or Color3.fromRGB(225, 225, 230)
-            Bar.ZIndex = 4
-            Bar.Parent = Frame
-
-            local BarCorner = Instance.new("UICorner")
-            BarCorner.CornerRadius = UDim.new(1, 0)
-            BarCorner.Parent = Bar
-
-            local Fill = Instance.new("Frame")
-            local initPercent = math.clamp((value - min) / (max - min), 0, 1)
-            Fill.Size = UDim2.new(initPercent, 0, 1, 0)
-            Fill.BackgroundColor3 = isDarkTheme and Color3.fromRGB(100, 140, 255) or Color3.fromRGB(80, 80, 85)
-            Fill.BorderSizePixel = 0
-            Fill.ZIndex = 4
-            Fill.Parent = Bar
-
-            local FillCorner = Instance.new("UICorner")
-            FillCorner.CornerRadius = UDim.new(1, 0)
-            FillCorner.Parent = Fill
-
-            table.insert(registeredThemeElements.Cards, Frame)
-            table.insert(registeredThemeElements.Strokes, Stroke)
-            table.insert(registeredThemeElements.Texts, Label)
-            table.insert(registeredThemeElements.SecondaryTexts, ValLabel)
-
-            local sliding = false
-            local function update(input)
-                local percent = math.clamp((input.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
-                Fill.Size = UDim2.new(percent, 0, 1, 0)
-                local currentVal = math.floor(min + (max - min) * percent)
-                ValLabel.Text = tostring(currentVal)
-                pcall(callback, currentVal)
+        local function activateTab()
+            for _, tab in pairs(Window.Tabs) do
+                tab.Page.Visible = false
+                tab.Button.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
+                tab.Button.TextColor3 = isDarkTheme and Color3.fromRGB(200, 200, 205) or Color3.fromRGB(60, 60, 65)
             end
-
-            Bar.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    sliding = true
-                    update(input)
-                end
-            end)
-
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    sliding = false
-                end
-            end)
-
-            UserInputService.InputChanged:Connect(function(input)
-                if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    update(input)
-                end
-            end)
+            PageScroll.Visible = true
+            TabBtn.BackgroundColor3 = isDarkTheme and Color3.fromRGB(52, 54, 62) or Color3.fromRGB(230, 233, 238)
+            TabBtn.TextColor3 = isDarkTheme and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(20, 20, 20)
+            Window.CurrentTab = name
         end
 
+        TabBtn.MouseButton1Click:Connect(activateTab)
+
+        table.insert(Window.Tabs, {Button = TabBtn, Page = PageScroll})
+        if #Window.Tabs == 1 then
+            activateTab()
+        end
+
+        local Tab = {}
+        attachComponentMethods(Tab, PageScroll)
         return Tab
     end
 
@@ -1112,5 +1353,4 @@ function Library:CreateWindow(titleText)
     return Window
 end
 
-local Window = Library:CreateWindow("Omerica strong")
-return Window
+return Library
