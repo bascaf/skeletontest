@@ -72,6 +72,10 @@ local Library = {}
 function Library:CreateWindow(titleText)
     titleText = titleText or "Omerica strong"
 
+    local targetParent = getGuiParent()
+    if targetParent:FindFirstChild("CustomLibraryUI") then
+        targetParent.CustomLibraryUI:Destroy()
+    end
     if CoreGui:FindFirstChild("CustomLibraryUI") then
         CoreGui.CustomLibraryUI:Destroy()
     end
@@ -80,7 +84,7 @@ function Library:CreateWindow(titleText)
     ScreenGui.Name = "CustomLibraryUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.Parent = getGuiParent()
+    ScreenGui.Parent = targetParent
 
 
     local MainFrame = Instance.new("Frame")
