@@ -912,5 +912,4 @@ function Library:CreateWindow(titleText)
 end
 
 local Window = Library:CreateWindow("Omerica strong")
-
-return Library
+return Window
