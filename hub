@@ -69,6 +69,78 @@ LoadSettings()
 
 local Library = {}
 
+function Window:Notify(title, text, duration)
+    duration = duration or 3
+    local notifyFrame = Instance.new("Frame")
+    notifyFrame.Size = UDim2.new(0, 260, 0, 60)
+    notifyFrame.Position = UDim2.new(1, 20, 1, -75)
+    notifyFrame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(32, 33, 38) or Color3.fromRGB(255, 255, 255)
+    notifyFrame.BorderSizePixel = 0
+    notifyFrame.ZIndex = 200
+    notifyFrame.Parent = ScreenGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = notifyFrame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = isDarkTheme and Color3.fromRGB(50, 52, 60) or Color3.fromRGB(220, 220, 225)
+    stroke.Thickness = 1
+    stroke.Parent = notifyFrame
+
+    local icon = Instance.new("ImageLabel")
+    icon.Size = UDim2.new(0, 40, 0, 40)
+    icon.Position = UDim2.new(0, 10, 0.5, -20)
+    icon.BackgroundTransparency = 1
+    icon.Image = getAsset("https://gachi.gay/SifHC2")
+    icon.ZIndex = 201
+    icon.Parent = notifyFrame
+
+    local iconCorner = Instance.new("UICorner")
+    iconCorner.CornerRadius = UDim.new(0, 6)
+    iconCorner.Parent = icon
+
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size = UDim2.new(1, -65, 0, 18)
+    titleLbl.Position = UDim2.new(0, 58, 0, 10)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text = title or "Notification"
+    titleLbl.Font = Enum.Font.FredokaOne
+    titleLbl.TextSize = 13
+    titleLbl.TextColor3 = isDarkTheme and Color3.fromRGB(240, 240, 245) or Color3.fromRGB(30, 30, 35)
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.ZIndex = 201
+    titleLbl.Parent = notifyFrame
+
+    local textLbl = Instance.new("TextLabel")
+    textLbl.Size = UDim2.new(1, -65, 0, 18)
+    textLbl.Position = UDim2.new(0, 58, 0, 30)
+    textLbl.BackgroundTransparency = 1
+    textLbl.Text = text or ""
+    textLbl.Font = Enum.Font.FredokaOne
+    textLbl.TextSize = 11
+    textLbl.TextColor3 = isDarkTheme and Color3.fromRGB(170, 172, 180) or Color3.fromRGB(80, 80, 85)
+    textLbl.TextXAlignment = Enum.TextXAlignment.Left
+    textLbl.ZIndex = 201
+    textLbl.Parent = notifyFrame
+
+    task.spawn(function()
+        TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(1, -275, 1, -75)
+        }):Play()
+
+        task.wait(duration)
+
+        local hideTween = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Position = UDim2.new(1, 20, 1, -75)
+        })
+        hideTween:Play()
+        hideTween.Completed:Connect(function()
+            notifyFrame:Destroy()
+        end)
+    end)
+end
+
 function Library:CreateWindow(titleText)
     titleText = titleText or "Omerica strong"
 
@@ -147,7 +219,6 @@ function Library:CreateWindow(titleText)
     SplashText.ZIndex = 51
     SplashText.Parent = SplashFrame
 
-    -- Анимация на 3 секунды внутри окна
     task.spawn(function()
         TweenService:Create(SplashImage, TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
             ImageTransparency = 0
@@ -182,7 +253,6 @@ function Library:CreateWindow(titleText)
         end)
     end)
 
-    -- Фон окна
     local CustomBackground = Instance.new("ImageLabel")
     CustomBackground.Name = "CustomBackground"
     CustomBackground.Size = UDim2.new(1, 0, 1, 0)
@@ -199,8 +269,7 @@ function Library:CreateWindow(titleText)
     SmileyCanvas.ClipsDescendants = true
     SmileyCanvas.ZIndex = 2
     SmileyCanvas.Parent = MainFrame
-
-    -- Карточка заголовка (TopBar)
+ 
     local TopBarCard = Instance.new("Frame")
     TopBarCard.Name = "TopBarCard"
     TopBarCard.Size = UDim2.new(1, -20, 0, 34)
