@@ -607,6 +607,135 @@ function Library:CreateWindow(titleText)
 
         local Tab = {}
 
+
+        function Tab:CreateDropdown(dropText, options, default, callback)
+            options = options or {}
+            callback = callback or function() end
+            local selected = default or (options[1] or "Select...")
+            local isOpen = false
+
+            local DropFrame = Instance.new("Frame")
+            DropFrame.Size = UDim2.new(1, 0, 0, 34)
+            DropFrame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
+            DropFrame.ClipsDescendants = true
+            DropFrame.ZIndex = 5
+            DropFrame.Parent = PageScroll
+
+            local DropCorner = Instance.new("UICorner")
+            DropCorner.CornerRadius = UDim.new(0, 6)
+            DropCorner.Parent = DropFrame
+
+            local DropStroke = Instance.new("UIStroke")
+            DropStroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
+            DropStroke.Thickness = 1
+            DropStroke.Parent = DropFrame
+
+            local HeaderBtn = Instance.new("TextButton")
+            HeaderBtn.Size = UDim2.new(1, 0, 0, 34)
+            HeaderBtn.BackgroundTransparency = 1
+            HeaderBtn.Text = ""
+            HeaderBtn.ZIndex = 6
+            HeaderBtn.Parent = DropFrame
+
+            local TitleLabel = Instance.new("TextLabel")
+            TitleLabel.Size = UDim2.new(0.5, 0, 1, 0)
+            TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+            TitleLabel.Text = dropText
+            TitleLabel.Font = Enum.Font.FredokaOne
+            TitleLabel.TextSize = 13
+            TitleLabel.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+            TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            TitleLabel.BackgroundTransparency = 1
+            TitleLabel.ZIndex = 6
+            TitleLabel.Parent = HeaderBtn
+
+            local SelectedLabel = Instance.new("TextLabel")
+            SelectedLabel.Size = UDim2.new(0.5, -34, 1, 0)
+            SelectedLabel.Position = UDim2.new(0.5, 0, 0, 0)
+            SelectedLabel.Text = tostring(selected)
+            SelectedLabel.Font = Enum.Font.FredokaOne
+            SelectedLabel.TextSize = 12
+            SelectedLabel.TextColor3 = isDarkTheme and Color3.fromRGB(180, 182, 190) or Color3.fromRGB(90, 90, 95)
+            SelectedLabel.TextXAlignment = Enum.TextXAlignment.Right
+            SelectedLabel.BackgroundTransparency = 1
+            SelectedLabel.ZIndex = 6
+            SelectedLabel.Parent = HeaderBtn
+
+            local Arrow = Instance.new("TextLabel")
+            Arrow.Size = UDim2.new(0, 20, 1, 0)
+            Arrow.Position = UDim2.new(1, -26, 0, 0)
+            Arrow.Text = "▼"
+            Arrow.Font = Enum.Font.FredokaOne
+            Arrow.TextSize = 10
+            Arrow.TextColor3 = isDarkTheme and Color3.fromRGB(180, 182, 190) or Color3.fromRGB(90, 90, 95)
+            Arrow.BackgroundTransparency = 1
+            Arrow.ZIndex = 6
+            Arrow.Parent = HeaderBtn
+
+            local OptionScroll = Instance.new("ScrollingFrame")
+            OptionScroll.Size = UDim2.new(1, -12, 0, 0)
+            OptionScroll.Position = UDim2.new(0, 6, 0, 36)
+            OptionScroll.BackgroundTransparency = 1
+            OptionScroll.ScrollBarThickness = 2
+            OptionScroll.ScrollBarImageTransparency = 0.5
+            OptionScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+            OptionScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+            OptionScroll.ZIndex = 6
+            OptionScroll.Parent = DropFrame
+
+            local OptionLayout = Instance.new("UIListLayout")
+            OptionLayout.Padding = UDim.new(0, 4)
+            OptionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            OptionLayout.Parent = OptionScroll
+
+            table.insert(registeredThemeElements.Cards, DropFrame)
+            table.insert(registeredThemeElements.Strokes, DropStroke)
+            table.insert(registeredThemeElements.Texts, TitleLabel)
+            table.insert(registeredThemeElements.SecondaryTexts, SelectedLabel)
+            table.insert(registeredThemeElements.SecondaryTexts, Arrow)
+
+            local function toggleDropdown()
+                isOpen = not isOpen
+                local maxVisibleItems = math.min(#options, 4)
+                local contentHeight = maxVisibleItems * 28 + (maxVisibleItems > 0 and (maxVisibleItems - 1) * 4 or 0)
+                local targetHeight = isOpen and (42 + contentHeight) or 34
+
+                OptionScroll.Size = UDim2.new(1, -12, 0, isOpen and contentHeight or 0)
+                TweenService:Create(DropFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Size = UDim2.new(1, 0, 0, targetHeight)
+                }):Play()
+
+                TweenService:Create(Arrow, TweenInfo.new(0.2), {
+                    Rotation = isOpen and 180 or 0
+                }):Play()
+            end
+
+            HeaderBtn.MouseButton1Click:Connect(toggleDropdown)
+
+            for _, opt in ipairs(options) do
+                local OptBtn = Instance.new("TextButton")
+                OptBtn.Size = UDim2.new(1, 0, 0, 24)
+                OptBtn.BackgroundColor3 = isDarkTheme and Color3.fromRGB(28, 29, 34) or Color3.fromRGB(240, 240, 245)
+                OptBtn.Text = tostring(opt)
+                OptBtn.Font = Enum.Font.FredokaOne
+                OptBtn.TextSize = 12
+                OptBtn.TextColor3 = isDarkTheme and Color3.fromRGB(220, 220, 225) or Color3.fromRGB(40, 40, 45)
+                OptBtn.ZIndex = 7
+                OptBtn.Parent = OptionScroll
+
+                local OptCorner = Instance.new("UICorner")
+                OptCorner.CornerRadius = UDim.new(0, 4)
+                OptCorner.Parent = OptBtn
+
+                OptBtn.MouseButton1Click:Connect(function()
+                    selected = opt
+                    SelectedLabel.Text = tostring(opt)
+                    toggleDropdown()
+                    pcall(callback, opt)
+                end)
+            end
+        end
+
         function Tab:CreateButton(btnText, callback)
             callback = callback or function() end
 
