@@ -1,0 +1,916 @@
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
+
+local function getGuiParent()
+    if gethui then
+        return gethui()
+    elseif syn and syn.protect_gui then
+        local gui = Instance.new("Folder")
+        syn.protect_gui(gui)
+        gui.Parent = CoreGui
+        return gui
+    end
+    return CoreGui
+end
+
+local function getAsset(urlOrId)
+    if tostring(urlOrId):match("^rbxassetid://") or tostring(urlOrId):match("^%d+$") then
+        local id = tostring(urlOrId):gsub("%D", "")
+        return "rbxassetid://" .. id
+    elseif (tostring(urlOrId):match("^http://") or tostring(urlOrId):match("^https://")) and getcustomasset and writefile then
+        local fileName = "custom_asset_" .. string.sub(HttpService:GenerateGUID(false), 1, 8) .. ".png"
+        if not isfile(fileName) then
+            pcall(function()
+                writefile(fileName, game:HttpGet(urlOrId))
+            end)
+        end
+        if isfile(fileName) then
+            return getcustomasset(fileName)
+        end
+    end
+    return urlOrId
+end
+
+local ConfigName = "OmericaStrong_Config.json"
+
+local SettingsData = {
+    SmileyCount = 25,
+    SmileySize = 14,
+    BgId = "11363427001",
+    BgClarity = 50,
+    DarkTheme = true -- Тёмная тема включена по умолчанию
+}
+
+local function SaveSettings()
+    if writefile then
+        pcall(function()
+            writefile(ConfigName, HttpService:JSONEncode(SettingsData))
+        end)
+    end
+end
+
+local function LoadSettings()
+    if isfile and readfile and isfile(ConfigName) then
+        local success, result = pcall(function()
+            return HttpService:JSONDecode(readfile(ConfigName))
+        end)
+        if success and type(result) == "table" then
+            for k, v in pairs(result) do
+                SettingsData[k] = v
+            end
+        end
+    end
+end
+
+LoadSettings()
+
+local Library = {}
+
+function Library:CreateWindow(titleText)
+    titleText = titleText or "Omerica strong"
+
+    if CoreGui:FindFirstChild("CustomLibraryUI") then
+        CoreGui.CustomLibraryUI:Destroy()
+    end
+
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "CustomLibraryUI"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.Parent = getGuiParent()
+
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(0, 580, 0, 420)
+    MainFrame.Position = UDim2.new(0.5, -290, 0.5, -210)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(24, 25, 29)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.ClipsDescendants = true
+    MainFrame.Parent = ScreenGui
+
+    local MainCorner = Instance.new("UICorner")
+    MainCorner.CornerRadius = UDim.new(0, 10)
+    MainCorner.Parent = MainFrame
+
+    local MainStroke = Instance.new("UIStroke")
+    MainStroke.Color = Color3.fromRGB(48, 50, 58)
+    MainStroke.Thickness = 1.5
+    MainStroke.Parent = MainFrame
+
+    local SplashFrame = Instance.new("Frame")
+    SplashFrame.Name = "SplashLoader"
+    SplashFrame.Size = UDim2.new(1, 0, 1, 0)
+    SplashFrame.BackgroundColor3 = Color3.fromRGB(20, 21, 25)
+    SplashFrame.BorderSizePixel = 0
+    SplashFrame.ZIndex = 50
+    SplashFrame.Parent = MainFrame
+
+    local SplashCorner = Instance.new("UICorner")
+    SplashCorner.CornerRadius = UDim.new(0, 10)
+    SplashCorner.Parent = SplashFrame
+
+    local SplashImage = Instance.new("ImageLabel")
+    SplashImage.Name = "SplashImage"
+    SplashImage.Size = UDim2.new(0, 140, 0, 140)
+    SplashImage.Position = UDim2.new(0.5, 0, 0.40, 0)
+    SplashImage.AnchorPoint = Vector2.new(0.5, 0.5)
+    SplashImage.BackgroundTransparency = 1
+    SplashImage.ImageTransparency = 1
+    SplashImage.ScaleType = Enum.ScaleType.Fit
+    SplashImage.Image = getAsset("https://gachi.gay/SifHC2")
+    SplashImage.ZIndex = 51
+    SplashImage.Parent = SplashFrame
+
+    local ImgCorner = Instance.new("UICorner")
+    ImgCorner.CornerRadius = UDim.new(0, 14)
+    ImgCorner.Parent = SplashImage
+
+    local SplashText = Instance.new("TextLabel")
+    SplashText.Name = "SplashText"
+    SplashText.Size = UDim2.new(0, 240, 0, 36)
+    SplashText.Position = UDim2.new(0.5, 0, 0.82, 0)
+    SplashText.AnchorPoint = Vector2.new(0.5, 0.5)
+    SplashText.BackgroundTransparency = 1
+    SplashText.TextTransparency = 1
+    SplashText.Text = "Omeric"
+    SplashText.Font = Enum.Font.FredokaOne
+    SplashText.TextSize = 24
+    SplashText.TextColor3 = Color3.fromRGB(235, 235, 240)
+    SplashText.ZIndex = 51
+    SplashText.Parent = SplashFrame
+
+    -- Анимация на 3 секунды внутри окна
+    task.spawn(function()
+        TweenService:Create(SplashImage, TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            ImageTransparency = 0
+        }):Play()
+
+        TweenService:Create(SplashText, TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            TextTransparency = 0
+        }):Play()
+
+        task.wait(1.0)
+
+        TweenService:Create(SplashImage, TweenInfo.new(1.2, Enum.EasingStyle.Back, Enum.EasingDirection.InOut), {
+            Size = UDim2.new(0, 65, 0, 65),
+            Position = UDim2.new(0.5, 0, 0.52, 0)
+        }):Play()
+
+        task.wait(1.2)
+
+        local fadeOut = TweenService:Create(SplashFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundTransparency = 1
+        })
+        TweenService:Create(SplashImage, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            ImageTransparency = 1
+        }):Play()
+        TweenService:Create(SplashText, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            TextTransparency = 1
+        }):Play()
+
+        fadeOut:Play()
+        fadeOut.Completed:Connect(function()
+            SplashFrame:Destroy()
+        end)
+    end)
+
+    -- Фон окна
+    local CustomBackground = Instance.new("ImageLabel")
+    CustomBackground.Name = "CustomBackground"
+    CustomBackground.Size = UDim2.new(1, 0, 1, 0)
+    CustomBackground.BackgroundTransparency = 1
+    CustomBackground.ImageTransparency = 1
+    CustomBackground.ScaleType = Enum.ScaleType.Fit
+    CustomBackground.ZIndex = 1
+    CustomBackground.Parent = MainFrame
+
+    local SmileyCanvas = Instance.new("Frame")
+    SmileyCanvas.Name = "SmileyCanvas"
+    SmileyCanvas.Size = UDim2.new(1, 0, 1, 0)
+    SmileyCanvas.BackgroundTransparency = 1
+    SmileyCanvas.ClipsDescendants = true
+    SmileyCanvas.ZIndex = 2
+    SmileyCanvas.Parent = MainFrame
+
+    -- Карточка заголовка (TopBar)
+    local TopBarCard = Instance.new("Frame")
+    TopBarCard.Name = "TopBarCard"
+    TopBarCard.Size = UDim2.new(1, -20, 0, 34)
+    TopBarCard.Position = UDim2.new(0, 10, 0, 10)
+    TopBarCard.BackgroundColor3 = Color3.fromRGB(36, 38, 44)
+    TopBarCard.ZIndex = 4
+    TopBarCard.Parent = MainFrame
+
+    local TopBarCorner = Instance.new("UICorner")
+    TopBarCorner.CornerRadius = UDim.new(0, 8)
+    TopBarCorner.Parent = TopBarCard
+
+    local TopBarStroke = Instance.new("UIStroke")
+    TopBarStroke.Color = Color3.fromRGB(48, 50, 58)
+    TopBarStroke.Thickness = 1
+    TopBarStroke.Parent = TopBarCard
+
+    local TopIcon = Instance.new("ImageLabel")
+    TopIcon.Name = "TopIcon"
+    TopIcon.Size = UDim2.new(0, 22, 0, 22)
+    TopIcon.Position = UDim2.new(0, 6, 0.5, -11)
+    TopIcon.BackgroundTransparency = 1
+    TopIcon.Image = getAsset("https://gachi.gay/SifHC2")
+    TopIcon.ZIndex = 5
+    TopIcon.Parent = TopBarCard
+
+    local IconCorner = Instance.new("UICorner")
+    IconCorner.CornerRadius = UDim.new(0, 4)
+    IconCorner.Parent = TopIcon
+
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Size = UDim2.new(1, -40, 1, 0)
+    Title.Position = UDim2.new(0, 36, 0, 0)
+    Title.Text = titleText
+    Title.Font = Enum.Font.FredokaOne
+    Title.TextSize = 14
+    Title.TextColor3 = Color3.fromRGB(235, 235, 240)
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.BackgroundTransparency = 1
+    Title.ZIndex = 5
+    Title.Parent = TopBarCard
+
+    local Sidebar = Instance.new("Frame")
+    Sidebar.Name = "Sidebar"
+    Sidebar.Size = UDim2.new(0, 125, 1, -62)
+    Sidebar.Position = UDim2.new(0, 10, 0, 52)
+    Sidebar.BackgroundColor3 = Color3.fromRGB(32, 33, 38)
+    Sidebar.ZIndex = 4
+    Sidebar.Parent = MainFrame
+
+    local SidebarCorner = Instance.new("UICorner")
+    SidebarCorner.CornerRadius = UDim.new(0, 8)
+    SidebarCorner.Parent = Sidebar
+
+    local SidebarStroke = Instance.new("UIStroke")
+    SidebarStroke.Color = Color3.fromRGB(48, 50, 58)
+    SidebarStroke.Thickness = 1
+    SidebarStroke.Parent = Sidebar
+
+    local TabContainer = Instance.new("ScrollingFrame")
+    TabContainer.Name = "TabContainer"
+    TabContainer.Size = UDim2.new(1, -8, 1, -8)
+    TabContainer.Position = UDim2.new(0, 4, 0, 4)
+    TabContainer.BackgroundTransparency = 1
+    TabContainer.ScrollBarThickness = 2
+    TabContainer.ScrollBarImageTransparency = 0.6
+    TabContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+    TabContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    TabContainer.ZIndex = 4
+    TabContainer.Parent = Sidebar
+
+    local TabLayout = Instance.new("UIListLayout")
+    TabLayout.Padding = UDim.new(0, 6)
+    TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabLayout.Parent = TabContainer
+
+    local Pages = Instance.new("Frame")
+    Pages.Name = "Pages"
+    Pages.Size = UDim2.new(1, -150, 1, -62)
+    Pages.Position = UDim2.new(0, 140, 0, 52)
+    Pages.BackgroundTransparency = 1
+    Pages.ZIndex = 4
+    Pages.Parent = MainFrame
+    local dragging, dragStart, startPos
+    TopBarCard.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    local ResizeGrip = Instance.new("TextButton")
+    ResizeGrip.Name = "ResizeGrip"
+    ResizeGrip.Size = UDim2.new(0, 20, 0, 20)
+    ResizeGrip.Position = UDim2.new(1, -22, 1, -22)
+    ResizeGrip.BackgroundTransparency = 1
+    ResizeGrip.Text = "ツ"
+    ResizeGrip.Font = Enum.Font.FredokaOne
+    ResizeGrip.TextSize = 14
+    ResizeGrip.TextColor3 = Color3.fromRGB(180, 182, 190)
+    ResizeGrip.ZIndex = 6
+    ResizeGrip.Parent = MainFrame
+
+    local resizing, resizeStart, startSize
+    ResizeGrip.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            resizing = true
+            resizeStart = input.Position
+            startSize = MainFrame.AbsoluteSize
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            resizing = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - resizeStart
+            MainFrame.Size = UDim2.new(0, math.max(420, startSize.X + delta.X), 0, math.max(280, startSize.Y + delta.Y))
+        end
+    end)
+
+    local isVisible = true
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
+            isVisible = not isVisible
+            MainFrame.Visible = isVisible
+        end
+    end)
+
+    local isDarkTheme = true
+    local registeredThemeElements = {
+        Cards = {},
+        Strokes = {},
+        Texts = {},
+        SecondaryTexts = {}
+    }
+
+    table.insert(registeredThemeElements.Cards, TopBarCard)
+    table.insert(registeredThemeElements.Strokes, TopBarStroke)
+    table.insert(registeredThemeElements.Texts, Title)
+
+    local function applyTheme(dark)
+        isDarkTheme = dark
+        local bgMain = dark and Color3.fromRGB(24, 25, 29) or Color3.fromRGB(245, 245, 247)
+        local bgSide = dark and Color3.fromRGB(32, 33, 38) or Color3.fromRGB(238, 240, 243)
+        local borderCol = dark and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(215, 215, 220)
+        local textCol = dark and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(30, 30, 35)
+        local cardBg = dark and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
+        local secText = dark and Color3.fromRGB(180, 182, 190) or Color3.fromRGB(70, 70, 75)
+
+        MainFrame.BackgroundColor3 = bgMain
+        MainStroke.Color = borderCol
+        Sidebar.BackgroundColor3 = bgSide
+        SidebarStroke.Color = borderCol
+        ResizeGrip.TextColor3 = secText
+
+        for _, item in ipairs(registeredThemeElements.Cards) do
+            item.BackgroundColor3 = cardBg
+        end
+        for _, item in ipairs(registeredThemeElements.Strokes) do
+            item.Color = borderCol
+        end
+        for _, item in ipairs(registeredThemeElements.Texts) do
+            item.TextColor3 = textCol
+        end
+        for _, item in ipairs(registeredThemeElements.SecondaryTexts) do
+            item.TextColor3 = secText
+        end
+    end
+
+    local smileys = {}
+    local smileyRadius = SettingsData.SmileySize or 14
+    local MAX_SPEED = 140
+    local MIN_SPEED = 30
+
+    local function spawnSmiley()
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0, smileyRadius * 2, 0, smileyRadius * 2)
+        label.AnchorPoint = Vector2.new(0.5, 0.5)
+        label.BackgroundTransparency = 1
+        label.Text = "☺"
+        label.Font = Enum.Font.FredokaOne
+        label.TextSize = math.floor(smileyRadius * 1.8)
+        label.TextColor3 = isDarkTheme and Color3.fromRGB(230, 230, 235) or Color3.fromRGB(25, 25, 30)
+        label.ZIndex = 2
+        label.Parent = SmileyCanvas
+
+        table.insert(registeredThemeElements.Texts, label)
+
+        local maxX = math.max(50, SmileyCanvas.AbsoluteSize.X - smileyRadius)
+        local maxY = math.max(50, SmileyCanvas.AbsoluteSize.Y - smileyRadius)
+
+        local angle = math.random() * math.pi * 2
+        local baseSpeed = math.random(50, 90)
+
+        local smileyData = {
+            Gui = label,
+            Pos = Vector2.new(math.random(smileyRadius, maxX), math.random(smileyRadius, maxY)),
+            Vel = Vector2.new(math.cos(angle) * baseSpeed, math.sin(angle) * baseSpeed),
+            Angle = math.random(0, 360),
+            RotSpeed = (math.random() > 0.5 and 1 or -1) * math.random(40, 90)
+        }
+        table.insert(smileys, smileyData)
+    end
+
+    local function removeSmiley()
+        if #smileys > 0 then
+            local data = table.remove(smileys, #smileys)
+            if data and data.Gui then
+                data.Gui:Destroy()
+            end
+        end
+    end
+
+    local function setSmileyCount(targetCount)
+        targetCount = math.clamp(targetCount, 0, 70)
+        while #smileys < targetCount do
+            spawnSmiley()
+        end
+        while #smileys > targetCount do
+            removeSmiley()
+        end
+    end
+
+    local function updateSmileySizes(newRadius)
+        smileyRadius = newRadius
+        for _, s in ipairs(smileys) do
+            s.Gui.Size = UDim2.new(0, smileyRadius * 2, 0, smileyRadius * 2)
+            s.Gui.TextSize = math.floor(smileyRadius * 1.8)
+        end
+    end
+
+    RunService.RenderStepped:Connect(function(dt)
+        local bounds = SmileyCanvas.AbsoluteSize
+        local mousePos = UserInputService:GetMouseLocation()
+        local canvasPos = SmileyCanvas.AbsolutePosition
+        local localMouse = Vector2.new(mousePos.X - canvasPos.X, mousePos.Y - canvasPos.Y)
+        local mouseRadius = 32
+
+        for _, s in ipairs(smileys) do
+            s.Angle = (s.Angle + s.RotSpeed * dt) % 360
+            s.Gui.Rotation = s.Angle
+
+            local currentSpeed = s.Vel.Magnitude
+            if currentSpeed > MAX_SPEED then
+                s.Vel = s.Vel.Unit * MAX_SPEED
+            elseif currentSpeed < MIN_SPEED and currentSpeed > 0 then
+                s.Vel = s.Vel.Unit * MIN_SPEED
+            else
+                s.Vel = s.Vel * (1 - 0.2 * dt)
+            end
+
+            s.Pos = s.Pos + s.Vel * dt
+
+            if s.Pos.X <= smileyRadius then
+                s.Pos = Vector2.new(smileyRadius, s.Pos.Y)
+                s.Vel = Vector2.new(math.abs(s.Vel.X), s.Vel.Y)
+            elseif s.Pos.X >= bounds.X - smileyRadius then
+                s.Pos = Vector2.new(bounds.X - smileyRadius, s.Pos.Y)
+                s.Vel = Vector2.new(-math.abs(s.Vel.X), s.Vel.Y)
+            end
+
+            if s.Pos.Y <= smileyRadius then
+                s.Pos = Vector2.new(s.Pos.X, smileyRadius)
+                s.Vel = Vector2.new(s.Vel.X, math.abs(s.Vel.Y))
+            elseif s.Pos.Y >= bounds.Y - smileyRadius then
+                s.Pos = Vector2.new(s.Pos.X, bounds.Y - smileyRadius)
+                s.Vel = Vector2.new(s.Vel.X, -math.abs(s.Vel.Y))
+            end
+
+            local dMouse = s.Pos - localMouse
+            local distMouse = dMouse.Magnitude
+            local hitDist = (smileyRadius * 0.7) + mouseRadius
+
+            if distMouse < hitDist and distMouse > 0 then
+                local normal = dMouse.Unit
+                local forceFactor = (1 - (distMouse / hitDist))
+                s.Vel = s.Vel + normal * (forceFactor * 320 * dt * 60)
+            end
+        end
+
+        for i = 1, #smileys do
+            for j = i + 1, #smileys do
+                local s1, s2 = smileys[i], smileys[j]
+                local delta = s2.Pos - s1.Pos
+                local dist = delta.Magnitude
+                local minDist = (smileyRadius * 2) * 0.7
+
+                if dist < minDist and dist > 0 then
+                    local normal = delta.Unit
+                    local overlap = 0.5 * (minDist - dist)
+
+                    s1.Pos = s1.Pos - normal * overlap
+                    s2.Pos = s2.Pos + normal * overlap
+
+                    local v1n = s1.Vel:Dot(normal)
+                    local v2n = s2.Vel:Dot(normal)
+
+                    if v1n - v2n > 0 then
+                        local impulse = (v1n - v2n) * 0.95
+                        s1.Vel = s1.Vel - normal * impulse
+                        s2.Vel = s2.Vel + normal * impulse
+
+                        s1.RotSpeed = -s1.RotSpeed
+                        s2.RotSpeed = -s2.RotSpeed
+                    end
+                end
+            end
+        end
+
+        for _, s in ipairs(smileys) do
+            s.Gui.Position = UDim2.new(0, s.Pos.X, 0, s.Pos.Y)
+        end
+    end)
+
+    local Window = {
+        CurrentTab = nil,
+        Tabs = {}
+    }
+
+    function Window:CreateTab(name)
+        local TabBtn = Instance.new("TextButton")
+        TabBtn.Name = name .. "Tab"
+        TabBtn.Size = UDim2.new(1, 0, 0, 32)
+        TabBtn.BackgroundColor3 = Color3.fromRGB(36, 38, 44)
+        TabBtn.Text = name
+        TabBtn.Font = Enum.Font.FredokaOne
+        TabBtn.TextSize = 13
+        TabBtn.TextColor3 = Color3.fromRGB(200, 200, 205)
+        TabBtn.AutoButtonColor = false
+        TabBtn.ZIndex = 4
+        TabBtn.Parent = TabContainer
+
+        local TabBtnCorner = Instance.new("UICorner")
+        TabBtnCorner.CornerRadius = UDim.new(0, 6)
+        TabBtnCorner.Parent = TabBtn
+
+        local TabBtnStroke = Instance.new("UIStroke")
+        TabBtnStroke.Color = Color3.fromRGB(48, 50, 58)
+        TabBtnStroke.Thickness = 1
+        TabBtnStroke.Parent = TabBtn
+
+        table.insert(registeredThemeElements.Cards, TabBtn)
+        table.insert(registeredThemeElements.Strokes, TabBtnStroke)
+        table.insert(registeredThemeElements.Texts, TabBtn)
+
+        local PageScroll = Instance.new("ScrollingFrame")
+        PageScroll.Name = name .. "Page"
+        PageScroll.Size = UDim2.new(1, 0, 1, 0)
+        PageScroll.BackgroundTransparency = 1
+        PageScroll.ScrollBarThickness = 3
+        PageScroll.Visible = false
+        PageScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        PageScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+        PageScroll.ZIndex = 4
+        PageScroll.Parent = Pages
+
+        local PageLayout = Instance.new("UIListLayout")
+        PageLayout.Padding = UDim.new(0, 8)
+        PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        PageLayout.Parent = PageScroll
+
+        local PagePadding = Instance.new("UIPadding")
+        PagePadding.PaddingRight = UDim.new(0, 8)
+        PagePadding.PaddingTop = UDim.new(0, 2)
+        PagePadding.Parent = PageScroll
+
+        local function activateTab()
+            for _, tab in pairs(Window.Tabs) do
+                tab.Page.Visible = false
+                tab.Button.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
+                tab.Button.TextColor3 = isDarkTheme and Color3.fromRGB(200, 200, 205) or Color3.fromRGB(60, 60, 65)
+            end
+            PageScroll.Visible = true
+            TabBtn.BackgroundColor3 = isDarkTheme and Color3.fromRGB(52, 54, 62) or Color3.fromRGB(230, 233, 238)
+            TabBtn.TextColor3 = isDarkTheme and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(20, 20, 20)
+            Window.CurrentTab = name
+        end
+
+        TabBtn.MouseButton1Click:Connect(activateTab)
+
+        table.insert(Window.Tabs, {Button = TabBtn, Page = PageScroll})
+        if #Window.Tabs == 1 then
+            activateTab()
+        end
+
+        local Tab = {}
+
+        function Tab:CreateButton(btnText, callback)
+            callback = callback or function() end
+
+            local Btn = Instance.new("TextButton")
+            Btn.Size = UDim2.new(1, 0, 0, 34)
+            Btn.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
+            Btn.Text = btnText
+            Btn.Font = Enum.Font.FredokaOne
+            Btn.TextSize = 13
+            Btn.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+            Btn.ZIndex = 4
+            Btn.Parent = PageScroll
+
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 6)
+            Corner.Parent = Btn
+
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
+            Stroke.Thickness = 1
+            Stroke.Parent = Btn
+
+            table.insert(registeredThemeElements.Cards, Btn)
+            table.insert(registeredThemeElements.Strokes, Stroke)
+            table.insert(registeredThemeElements.Texts, Btn)
+
+            Btn.MouseButton1Click:Connect(function()
+                pcall(callback)
+            end)
+        end
+
+        function Tab:CreateToggle(toggleText, default, callback)
+            local state = default or false
+            callback = callback or function() end
+
+            local Frame = Instance.new("Frame")
+            Frame.Size = UDim2.new(1, 0, 0, 34)
+            Frame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
+            Frame.ZIndex = 4
+            Frame.Parent = PageScroll
+
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 6)
+            Corner.Parent = Frame
+
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
+            Stroke.Thickness = 1
+            Stroke.Parent = Frame
+
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(1, -60, 1, 0)
+            Label.Position = UDim2.new(0, 10, 0, 0)
+            Label.Text = toggleText
+            Label.Font = Enum.Font.FredokaOne
+            Label.TextSize = 13
+            Label.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.BackgroundTransparency = 1
+            Label.ZIndex = 4
+            Label.Parent = Frame
+
+            local Switch = Instance.new("TextButton")
+            Switch.Size = UDim2.new(0, 42, 0, 20)
+            Switch.Position = UDim2.new(1, -50, 0.5, -10)
+            Switch.BackgroundColor3 = state and Color3.fromRGB(75, 125, 240) or Color3.fromRGB(50, 52, 60)
+            Switch.Text = ""
+            Switch.AutoButtonColor = false
+            Switch.ZIndex = 4
+            Switch.Parent = Frame
+
+            local SwitchCorner = Instance.new("UICorner")
+            SwitchCorner.CornerRadius = UDim.new(1, 0)
+            SwitchCorner.Parent = Switch
+
+            local Circle = Instance.new("Frame")
+            Circle.Size = UDim2.new(0, 16, 0, 16)
+            Circle.Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+            Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Circle.ZIndex = 4
+            Circle.Parent = Switch
+
+            local CircleCorner = Instance.new("UICorner")
+            CircleCorner.CornerRadius = UDim.new(1, 0)
+            CircleCorner.Parent = Circle
+
+            table.insert(registeredThemeElements.Cards, Frame)
+            table.insert(registeredThemeElements.Strokes, Stroke)
+            table.insert(registeredThemeElements.Texts, Label)
+
+            local function updateToggle()
+                state = not state
+                TweenService:Create(Switch, TweenInfo.new(0.2), {
+                    BackgroundColor3 = state and Color3.fromRGB(75, 125, 240) or (isDarkTheme and Color3.fromRGB(50, 52, 60) or Color3.fromRGB(200, 200, 205))
+                }):Play()
+                TweenService:Create(Circle, TweenInfo.new(0.2), {
+                    Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+                }):Play()
+                pcall(callback, state)
+            end
+
+            Switch.MouseButton1Click:Connect(updateToggle)
+        end
+
+        function Tab:CreateInput(inputText, placeholder, callback)
+            callback = callback or function() end
+
+            local Frame = Instance.new("Frame")
+            Frame.Size = UDim2.new(1, 0, 0, 34)
+            Frame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
+            Frame.ZIndex = 4
+            Frame.Parent = PageScroll
+
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 6)
+            Corner.Parent = Frame
+
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
+            Stroke.Thickness = 1
+            Stroke.Parent = Frame
+
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(0.5, 0, 1, 0)
+            Label.Position = UDim2.new(0, 10, 0, 0)
+            Label.Text = inputText
+            Label.Font = Enum.Font.FredokaOne
+            Label.TextSize = 13
+            Label.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.BackgroundTransparency = 1
+            Label.ZIndex = 4
+            Label.Parent = Frame
+
+            local Box = Instance.new("TextBox")
+            Box.Size = UDim2.new(0.45, -10, 0, 24)
+            Box.Position = UDim2.new(0.55, 0, 0.5, -12)
+            Box.BackgroundColor3 = isDarkTheme and Color3.fromRGB(28, 29, 34) or Color3.fromRGB(240, 240, 245)
+            Box.Text = ""
+            Box.PlaceholderText = placeholder or "..."
+            Box.Font = Enum.Font.FredokaOne
+            Box.TextSize = 12
+            Box.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+            Box.PlaceholderColor3 = Color3.fromRGB(130, 130, 135)
+            Box.ZIndex = 4
+            Box.Parent = Frame
+
+            local BoxCorner = Instance.new("UICorner")
+            BoxCorner.CornerRadius = UDim.new(0, 4)
+            BoxCorner.Parent = Box
+
+            table.insert(registeredThemeElements.Cards, Frame)
+            table.insert(registeredThemeElements.Strokes, Stroke)
+            table.insert(registeredThemeElements.Texts, Label)
+
+            Box.FocusLost:Connect(function(enterPressed)
+                pcall(callback, Box.Text, enterPressed)
+            end)
+        end
+
+        function Tab:CreateSlider(sliderText, min, max, default, callback)
+            callback = callback or function() end
+            local value = default or min
+
+            local Frame = Instance.new("Frame")
+            Frame.Size = UDim2.new(1, 0, 0, 46)
+            Frame.BackgroundColor3 = isDarkTheme and Color3.fromRGB(36, 38, 44) or Color3.fromRGB(255, 255, 255)
+            Frame.ZIndex = 4
+            Frame.Parent = PageScroll
+
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 6)
+            Corner.Parent = Frame
+
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = isDarkTheme and Color3.fromRGB(48, 50, 58) or Color3.fromRGB(220, 220, 225)
+            Stroke.Thickness = 1
+            Stroke.Parent = Frame
+
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(0.7, 0, 0, 20)
+            Label.Position = UDim2.new(0, 10, 0, 2)
+            Label.Text = sliderText
+            Label.Font = Enum.Font.FredokaOne
+            Label.TextSize = 13
+            Label.TextColor3 = isDarkTheme and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(40, 40, 45)
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.BackgroundTransparency = 1
+            Label.ZIndex = 4
+            Label.Parent = Frame
+
+            local ValLabel = Instance.new("TextLabel")
+            ValLabel.Size = UDim2.new(0.3, -10, 0, 20)
+            ValLabel.Position = UDim2.new(0.7, 0, 0, 2)
+            ValLabel.Text = tostring(value)
+            ValLabel.Font = Enum.Font.FredokaOne
+            ValLabel.TextSize = 12
+            ValLabel.TextColor3 = isDarkTheme and Color3.fromRGB(180, 182, 190) or Color3.fromRGB(70, 70, 75)
+            ValLabel.TextXAlignment = Enum.TextXAlignment.Right
+            ValLabel.BackgroundTransparency = 1
+            ValLabel.ZIndex = 4
+            ValLabel.Parent = Frame
+
+            local Bar = Instance.new("Frame")
+            Bar.Size = UDim2.new(1, -20, 0, 8)
+            Bar.Position = UDim2.new(0, 10, 0, 28)
+            Bar.BackgroundColor3 = isDarkTheme and Color3.fromRGB(50, 52, 60) or Color3.fromRGB(225, 225, 230)
+            Bar.ZIndex = 4
+            Bar.Parent = Frame
+
+            local BarCorner = Instance.new("UICorner")
+            BarCorner.CornerRadius = UDim.new(1, 0)
+            BarCorner.Parent = Bar
+
+            local Fill = Instance.new("Frame")
+            local initPercent = math.clamp((value - min) / (max - min), 0, 1)
+            Fill.Size = UDim2.new(initPercent, 0, 1, 0)
+            Fill.BackgroundColor3 = isDarkTheme and Color3.fromRGB(100, 140, 255) or Color3.fromRGB(80, 80, 85)
+            Fill.BorderSizePixel = 0
+            Fill.ZIndex = 4
+            Fill.Parent = Bar
+
+            local FillCorner = Instance.new("UICorner")
+            FillCorner.CornerRadius = UDim.new(1, 0)
+            FillCorner.Parent = Fill
+
+            table.insert(registeredThemeElements.Cards, Frame)
+            table.insert(registeredThemeElements.Strokes, Stroke)
+            table.insert(registeredThemeElements.Texts, Label)
+            table.insert(registeredThemeElements.SecondaryTexts, ValLabel)
+
+            local sliding = false
+            local function update(input)
+                local percent = math.clamp((input.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
+                Fill.Size = UDim2.new(percent, 0, 1, 0)
+                local currentVal = math.floor(min + (max - min) * percent)
+                ValLabel.Text = tostring(currentVal)
+                pcall(callback, currentVal)
+            end
+
+            Bar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    sliding = true
+                    update(input)
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    sliding = false
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    update(input)
+                end
+            end)
+        end
+
+        return Tab
+    end
+
+    local SettingsTab = Window:CreateTab("Settings")
+
+    SettingsTab:CreateSlider("Smiley Count:", 0, 70, SettingsData.SmileyCount, function(val)
+        SettingsData.SmileyCount = val
+        setSmileyCount(val)
+        SaveSettings()
+    end)
+    setSmileyCount(SettingsData.SmileyCount)
+
+    SettingsTab:CreateSlider("Smiley Size:", 8, 75, SettingsData.SmileySize, function(val)
+        SettingsData.SmileySize = val
+        updateSmileySizes(val)
+        SaveSettings()
+    end)
+    updateSmileySizes(SettingsData.SmileySize)
+
+    SettingsTab:CreateInput("Add BG (ID/URL):", SettingsData.BgId, function(text)
+        if text and text ~= "" then
+            SettingsData.BgId = text
+            CustomBackground.Image = getAsset(text)
+            SaveSettings()
+        end
+    end)
+    if SettingsData.BgId and SettingsData.BgId ~= "" then
+        CustomBackground.Image = getAsset(SettingsData.BgId)
+    end
+
+    SettingsTab:CreateSlider("BG Clarity (%):", 0, 100, SettingsData.BgClarity, function(val)
+        SettingsData.BgClarity = val
+        CustomBackground.ImageTransparency = (100 - val) / 100
+        SaveSettings()
+    end)
+    CustomBackground.ImageTransparency = (100 - SettingsData.BgClarity) / 100
+
+    SettingsTab:CreateToggle("Dark Theme", SettingsData.DarkTheme, function(state)
+        SettingsData.DarkTheme = state
+        applyTheme(state)
+        SaveSettings()
+    end)
+
+    applyTheme(SettingsData.DarkTheme)
+
+    return Window
+end
+
+local Window = Library:CreateWindow("Omerica strong")
+
+return Library
